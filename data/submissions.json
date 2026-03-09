@@ -1,1 +1,175 @@
-[]
+[
+  {
+    "id": "c0219953-182e-48c2-97ed-ef2807261ebc",
+    "name": "Brooklyn Hive",
+    "gpu": "H100",
+    "operator": "@bschippers",
+    "bestValBpb": 0.9621,
+    "totalExperiments": 20,
+    "keepRate": 65,
+    "crashRate": 10,
+    "improvementPct": 3.59,
+    "experiments": [
+      {
+        "step": 1,
+        "commit": "a3f8c01",
+        "valBpb": 0.9979,
+        "memoryGb": 42.1,
+        "status": "keep",
+        "description": "baseline GPT-2 small config"
+      },
+      {
+        "step": 2,
+        "commit": "b7d2e44",
+        "valBpb": 0.9934,
+        "memoryGb": 42.3,
+        "status": "keep",
+        "description": "bump LR 0.001 → 0.003 with warmup"
+      },
+      {
+        "step": 3,
+        "commit": "c91ab08",
+        "valBpb": 0.9912,
+        "memoryGb": 42.2,
+        "status": "keep",
+        "description": "add rotary positional embeddings"
+      },
+      {
+        "step": 4,
+        "commit": "d5e7f33",
+        "valBpb": 0.9878,
+        "memoryGb": 43.8,
+        "status": "keep",
+        "description": "swap GELU → SwiGLU activation"
+      },
+      {
+        "step": 5,
+        "commit": "e12c9a7",
+        "valBpb": 0,
+        "memoryGb": 0,
+        "status": "crash",
+        "description": "double width 768 → 1536 (OOM on 40GB)"
+      },
+      {
+        "step": 6,
+        "commit": "f8a4b56",
+        "valBpb": 0.9845,
+        "memoryGb": 44.1,
+        "status": "keep",
+        "description": "width 768 → 896 with depth 10"
+      },
+      {
+        "step": 7,
+        "commit": "0bc3d91",
+        "valBpb": 0.9867,
+        "memoryGb": 44,
+        "status": "discard",
+        "description": "replace LayerNorm with RMSNorm (regression)"
+      },
+      {
+        "step": 8,
+        "commit": "1de5f78",
+        "valBpb": 0.9812,
+        "memoryGb": 44.5,
+        "status": "keep",
+        "description": "cosine LR schedule with 500-step warmup"
+      },
+      {
+        "step": 9,
+        "commit": "2af8c34",
+        "valBpb": 0.9789,
+        "memoryGb": 45.8,
+        "status": "keep",
+        "description": "batch size 48 → 72 via gradient accumulation"
+      },
+      {
+        "step": 10,
+        "commit": "3b91e67",
+        "valBpb": 0.9801,
+        "memoryGb": 45.7,
+        "status": "discard",
+        "description": "weight decay 0.1 across all params"
+      },
+      {
+        "step": 11,
+        "commit": "4cd2a89",
+        "valBpb": 0.9756,
+        "memoryGb": 46.2,
+        "status": "keep",
+        "description": "multi-query attention with 4 KV heads"
+      },
+      {
+        "step": 12,
+        "commit": "5ef3b12",
+        "valBpb": 0.9723,
+        "memoryGb": 46.5,
+        "status": "keep",
+        "description": "Muon optimizer momentum 0.95"
+      },
+      {
+        "step": 13,
+        "commit": "6a04c45",
+        "valBpb": 0.9745,
+        "memoryGb": 46.3,
+        "status": "discard",
+        "description": "attention dropout 0.05 (hurts at this scale)"
+      },
+      {
+        "step": 14,
+        "commit": "7b15d78",
+        "valBpb": 0,
+        "memoryGb": 0,
+        "status": "crash",
+        "description": "knowledge distillation from 1.3B checkpoint"
+      },
+      {
+        "step": 15,
+        "commit": "8c26e01",
+        "valBpb": 0.9698,
+        "memoryGb": 47.1,
+        "status": "keep",
+        "description": "embed dim 896 → 960 + head rebalance"
+      },
+      {
+        "step": 16,
+        "commit": "9d37f34",
+        "valBpb": 0.9712,
+        "memoryGb": 47,
+        "status": "discard",
+        "description": "context length 512 → 768 (neutral)"
+      },
+      {
+        "step": 17,
+        "commit": "ae48067",
+        "valBpb": 0.9667,
+        "memoryGb": 47.8,
+        "status": "keep",
+        "description": "parallel attention + FFN blocks"
+      },
+      {
+        "step": 18,
+        "commit": "bf5919a",
+        "valBpb": 0.9645,
+        "memoryGb": 48.2,
+        "status": "keep",
+        "description": "flash attention v2 + fused kernels"
+      },
+      {
+        "step": 19,
+        "commit": "c060a2d",
+        "valBpb": 0.9658,
+        "memoryGb": 48,
+        "status": "discard",
+        "description": "grouped query attention 8 groups (slight regression)"
+      },
+      {
+        "step": 20,
+        "commit": "d171b3e",
+        "valBpb": 0.9621,
+        "memoryGb": 48.5,
+        "status": "keep",
+        "description": "final tuning: LR 0.0025, batch 96, depth 12"
+      }
+    ]
+  }
+]

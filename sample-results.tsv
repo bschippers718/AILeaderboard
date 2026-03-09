@@ -1,0 +1,21 @@
+commit	val_bpb	memory_gb	status	description
+a3f8c01	0.9979	42.1	keep	baseline GPT-2 small config
+b7d2e44	0.9934	42.3	keep	bump LR 0.001 → 0.003 with warmup
+c91ab08	0.9912	42.2	keep	add rotary positional embeddings
+d5e7f33	0.9878	43.8	keep	swap GELU → SwiGLU activation
+e12c9a7	0.0	0.0	crash	double width 768 → 1536 (OOM on 40GB)
+f8a4b56	0.9845	44.1	keep	width 768 → 896 with depth 10
+0bc3d91	0.9867	44.0	discard	replace LayerNorm with RMSNorm (regression)
+1de5f78	0.9812	44.5	keep	cosine LR schedule with 500-step warmup
+2af8c34	0.9789	45.8	keep	batch size 48 → 72 via gradient accumulation
+3b91e67	0.9801	45.7	discard	weight decay 0.1 across all params
+4cd2a89	0.9756	46.2	keep	multi-query attention with 4 KV heads
+5ef3b12	0.9723	46.5	keep	Muon optimizer momentum 0.95
+6a04c45	0.9745	46.3	discard	attention dropout 0.05 (hurts at this scale)
+7b15d78	0.0	0.0	crash	knowledge distillation from 1.3B checkpoint
+8c26e01	0.9698	47.1	keep	embed dim 896 → 960 + head rebalance
+9d37f34	0.9712	47.0	discard	context length 512 → 768 (neutral)
+ae48067	0.9667	47.8	keep	parallel attention + FFN blocks
+bf5919a	0.9645	48.2	keep	flash attention v2 + fused kernels
+c060a2d	0.9658	48.0	discard	grouped query attention 8 groups (slight regression)
+d171b3e	0.9621	48.5	keep	final tuning: LR 0.0025, batch 96, depth 12

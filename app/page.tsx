@@ -1,118 +1,188 @@
 "use client";
 
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  CartesianGrid,
-} from "recharts";
 import Link from "next/link";
 import {
-  HIVES,
-  getTrajectory,
-  getChartData,
-  getRecentActivity,
-  parseResultsTsv,
-  type GPU,
-  type HiveSubmission,
-  type Experiment,
-} from "@/lib/data";
+  RESEARCHERS,
+  RECENT_MOVES,
+  COMPANY_COLORS,
+  COMPANY_FILTER_LIST,
+  computeTenureMonths,
+  computeHeat,
+  computeInfluence,
+  formatTenure,
+  getCompanyStats,
+  type Researcher,
+  type Tier,
+} from "@/lib/researchers";
 
-const HIVE_COLORS: Record<string, string> = {
-  "Hive Alpha": "#00FFB2",
-  "Hive Phoenix": "#FF6B35",
-  "Hive Omega": "#4488FF",
-  "Hive Prometheus": "#FFB547",
-  "Hive Genesis": "#A855F7",
-  "Hive Nightowl": "#FF4466",
-  "Your Hive": "#FFD700",
-};
+// ─── Sort options ──────────────────────────────────────────
 
-const GPU_OPTIONS: (GPU | "all")[] = [
-  "all",
-  "H100",
-  "A100",
-  "RTX 4090",
-  "L40S",
-];
-const GPU_LIST: GPU[] = ["H100", "A100", "RTX 4090", "L40S"];
+type SortKey = "influence" | "hIndex" | "citations" | "tenure" | "heat";
+
+function sortResearchers(list: Researcher[], key: SortKey): Researcher[] {
+  const copy = [...list];
+  switch (key) {
+    case "influence":
+      return copy.sort((a, b) => computeInfluence(b) - computeInfluence(a));
+    case "hIndex":
+      return copy.sort((a, b) => b.hIndex - a.hIndex);
+    case "citations":
+      return copy.sort((a, b) => b.citations - a.citations);
+    case "tenure":
+      return copy.sort(
+        (a, b) => computeTenureMonths(b.joined) - computeTenureMonths(a.joined),
+      );
+    case "heat":
+      return copy.sort((a, b) => computeHeat(b) - computeHeat(a));
+    default:
+      return copy;
+  }
+}
 
 // ─── Sub-components ────────────────────────────────────────
 
-function DigitBoard({ value }: { value: string }) {
+function CompanyBadge({ company }: { company: string }) {
+  const color = COMPANY_COLORS[company] || "#888";
   return (
-    <div className="flex items-center justify-center gap-[3px]">
-      {value.split("").map((char, i) => (
-        <motion.span
-          key={i}
-          initial={{ opacity: 0, y: -16, rotateX: -60 }}
-          animate={{ opacity: 1, y: 0, rotateX: 0 }}
-          transition={{
-            delay: 0.5 + i * 0.055,
-            duration: 0.45,
-            ease: "easeOut",
-          }}
-          className={`digit-cell ${char === "." ? "dot" : ""} text-4xl md:text-6xl font-bold text-neon tabular`}
-        >
-          {char}
-        </motion.span>
+    <span
+      className="company-badge"
+      style={{
+        borderColor: `${color}33`,
+        color,
+        background: `${color}0F`,
+      }}
+    >
+      {company}
+    </span>
+  );
+}
+
+function TierBadge({ tier }: { tier: Tier }) {
+  return (
+    <span className={`tier-badge ${tier.toLowerCase()}`}>{tier}</span>
+  );
+}
+
+function HeatBar({ heat }: { heat: number }) {
+  return (
+    <div className="heat-indicator" title={`Transfer heat: ${heat}/5`}>
+      {[1, 2, 3, 4, 5].map((level) => (
+        <div
+          key={level}
+          className={`heat-dot ${level <= heat ? `active-${level}` : ""}`}
+        />
       ))}
     </div>
   );
 }
 
-function RankBadge({ rank }: { rank: number }) {
-  const cls =
-    rank === 1
-      ? "first"
-      : rank === 2
-        ? "second"
-        : rank === 3
-          ? "third"
-          : "rest";
-  return <div className={`rank-badge ${cls}`}>{rank}</div>;
-}
-
-function GpuChip({ gpu }: { gpu: GPU }) {
-  const cls: Record<string, string> = {
-    H100: "h100",
-    A100: "a100",
-    "RTX 4090": "rtx4090",
-    L40S: "l40s",
-  };
-  return <span className={`gpu-chip ${cls[gpu] || "h100"}`}>{gpu}</span>;
-}
-
-function Sparkline({ data, color }: { data: number[]; color: string }) {
-  if (data.length < 2) return null;
-  const min = Math.min(...data);
-  const max = Math.max(...data);
-  const range = max - min || 0.001;
-  const w = 72;
-  const h = 24;
-  const pad = 2;
-  const points = data.map((v, i) => {
-    const x = pad + (i / (data.length - 1)) * (w - 2 * pad);
-    const y = pad + ((v - min) / range) * (h - 2 * pad);
-    return `${x},${y}`;
-  });
+function XIcon() {
   return (
-    <svg width={w} height={h} className="opacity-70">
-      <polyline
-        points={points.join(" ")}
-        fill="none"
-        stroke={color}
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
     </svg>
   );
+}
+
+function LinkedInIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
+    </svg>
+  );
+}
+
+function ScholarIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M5.242 13.769L0 9.5 12 0l12 9.5-5.242 4.269C17.548 11.249 14.978 9.5 12 9.5c-2.977 0-5.548 1.748-6.758 4.269zM12 10a7 7 0 1 0 0 14 7 7 0 0 0 0-14z" />
+    </svg>
+  );
+}
+
+function MobileCard({
+  r,
+  rank,
+  showFrom,
+}: {
+  r: Researcher;
+  rank: number;
+  showFrom: boolean;
+}) {
+  const heat = computeHeat(r);
+  const tenure = computeTenureMonths(r.joined);
+  const color = COMPANY_COLORS[r.company] || "#888";
+  return (
+    <div
+      className={`border border-line/30 p-4 ${rank === 1 ? "box-glow-ember bg-raised/40" : "bg-base/30"}`}
+    >
+      <div className="flex items-start gap-3 mb-3">
+        <div
+          className={`rank-badge shrink-0 ${
+            rank === 1 ? "first" : rank === 2 ? "second" : rank === 3 ? "third" : "rest"
+          }`}
+        >
+          {rank}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="text-bright text-sm font-semibold truncate">
+            {r.name}
+          </div>
+          <div className="text-ghost text-[11px] truncate">{r.role}</div>
+        </div>
+        <TierBadge tier={r.tier} />
+      </div>
+
+      <div className="flex items-center gap-2 mb-2">
+        <span
+          className="company-badge"
+          style={{ borderColor: `${color}33`, color, background: `${color}0F` }}
+        >
+          {r.company}
+        </span>
+        <span className="text-ghost text-[10px]">{formatTenure(tenure)}</span>
+        {showFrom && r.prevCompany && (
+          <span className="text-blaze/70 text-[10px]">← {r.prevCompany}</span>
+        )}
+      </div>
+
+      <div className="flex items-center justify-between text-[11px]">
+        <div className="flex gap-4">
+          <span className="text-dim">
+            <span className="text-ghost">h:</span> {r.hIndex || "—"}
+          </span>
+          <span className="text-dim">
+            <span className="text-ghost">cit:</span>{" "}
+            {r.citations > 0 ? formatCitations(r.citations) : "—"}
+          </span>
+          <span className="text-dim">
+            <span className="text-ghost">prev:</span> {r.prevCompany}
+          </span>
+        </div>
+        <div className="flex items-center gap-1">
+          <HeatBar heat={heat} />
+          {r.twitter && (
+            <a
+              href={`https://x.com/${r.twitter}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="social-icon"
+            >
+              <XIcon />
+            </a>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function formatCitations(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(0)}k`;
+  return n.toString();
 }
 
 function StatBox({
@@ -134,214 +204,51 @@ function StatBox({
   );
 }
 
-function ChartTooltip({
-  active,
-  payload,
-  label,
-}: {
-  active?: boolean;
-  payload?: Array<{ name: string; value: number; color: string }>;
-  label?: string;
-}) {
-  if (!active || !payload?.length) return null;
-  return (
-    <div className="bg-raised border border-line px-4 py-3 text-xs font-mono shadow-xl">
-      <div className="text-ghost mb-2">Experiment #{label}</div>
-      {payload.map((entry) => (
-        <div key={entry.name} className="flex items-center gap-2 py-0.5">
-          <div
-            className="w-2 h-[2px] rounded-full shrink-0"
-            style={{ background: entry.color }}
-          />
-          <span className="text-dim">{entry.name}</span>
-          <span className="text-bright tabular ml-auto pl-4">
-            {entry.value?.toFixed(6)}
-          </span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function ShareIcon() {
-  return (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
-    </svg>
-  );
-}
-
-// ─── Upload types ──────────────────────────────────────────
-
-type UploadState =
-  | { step: "idle" }
-  | { step: "parsed"; experiments: Experiment[] }
-  | { step: "submitting" }
-  | { step: "done"; shareId: string };
-
 // ─── Main Page ─────────────────────────────────────────────
 
-export default function Home() {
-  const [gpuFilter, setGpuFilter] = useState<GPU | "all">("all");
-  const [userSubmissions, setUserSubmissions] = useState<HiveSubmission[]>([]);
-  const [activity, setActivity] = useState<
-    ReturnType<typeof getRecentActivity>
-  >([]);
-  const [copied, setCopied] = useState<string | null>(null);
+export default function RosterPage() {
+  const [companyFilter, setCompanyFilter] = useState<string>("all");
+  const [sortKey, setSortKey] = useState<SortKey>("influence");
+  const [showCount, setShowCount] = useState(50);
 
-  // Upload flow
-  const [upload, setUpload] = useState<UploadState>({ step: "idle" });
-  const [isDragActive, setIsDragActive] = useState(false);
-  const [formName, setFormName] = useState("");
-  const [formGpu, setFormGpu] = useState<GPU>("H100");
-  const [formOperator, setFormOperator] = useState("");
-
-  // Fetch user submissions from API
-  useEffect(() => {
-    fetch("/api/leaderboard")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.submissions) setUserSubmissions(data.submissions);
-      })
-      .catch(() => {});
-  }, []);
-
-  const allHives = useMemo(
-    () => [...HIVES, ...userSubmissions],
-    [userSubmissions],
-  );
-
-  useEffect(() => {
-    setActivity(getRecentActivity(allHives));
-  }, [allHives]);
-
-  const sorted = useMemo(() => {
-    const filtered =
-      gpuFilter === "all"
-        ? allHives
-        : allHives.filter((h) => h.gpu === gpuFilter);
-    return [...filtered].sort((a, b) => a.bestValBpb - b.bestValBpb);
-  }, [gpuFilter, allHives]);
-
-  const globalBest = useMemo(
-    () => Math.min(...allHives.map((h) => h.bestValBpb)),
-    [allHives],
-  );
-  const totalExperiments = useMemo(
-    () => allHives.reduce((s, h) => s + h.totalExperiments, 0),
-    [allHives],
-  );
-  const chartData = useMemo(() => getChartData(allHives), [allHives]);
-  const avgKeepRate = Math.round(
-    allHives.reduce((s, h) => s + h.keepRate, 0) / allHives.length,
-  );
-
-  // File processing
-  const processFile = useCallback((file: File) => {
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const text = ev.target?.result as string;
-      const experiments = parseResultsTsv(text);
-      if (experiments.length > 0) {
-        setUpload({ step: "parsed", experiments });
-      }
-    };
-    reader.readAsText(file);
-  }, []);
-
-  const handleDrop = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault();
-      setIsDragActive(false);
-      const file = e.dataTransfer.files[0];
-      if (file) processFile(file);
-    },
-    [processFile],
-  );
-
-  const handleFileInput = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (file) processFile(file);
-    },
-    [processFile],
-  );
-
-  // Submit to API
-  const handleSubmit = useCallback(async () => {
-    if (upload.step !== "parsed") return;
-    setUpload({ step: "submitting" });
-    try {
-      const res = await fetch("/api/leaderboard", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: formName || "Unnamed Hive",
-          gpu: formGpu,
-          operator: formOperator || "@anonymous",
-          experiments: upload.experiments,
-        }),
-      });
-      const data = await res.json();
-      if (data.id) {
-        setUpload({ step: "done", shareId: data.id });
-        // Refresh submissions
-        const refreshed = await fetch("/api/leaderboard").then((r) =>
-          r.json(),
-        );
-        if (refreshed.submissions) setUserSubmissions(refreshed.submissions);
-      } else {
-        setUpload({ step: "parsed", experiments: upload.experiments });
-      }
-    } catch {
-      setUpload({ step: "parsed", experiments: upload.experiments });
+  const filtered = useMemo(() => {
+    if (companyFilter === "all") return RESEARCHERS;
+    if (companyFilter === "__recent__") {
+      return RESEARCHERS.filter((r) => computeTenureMonths(r.joined) < 18);
     }
-  }, [upload, formName, formGpu, formOperator]);
+    return RESEARCHERS.filter((r) => r.company === companyFilter);
+  }, [companyFilter]);
 
-  // Share a hive's link
-  const handleShare = useCallback((hiveId: string) => {
-    const url = `${window.location.origin}/share/${hiveId}`;
-    navigator.clipboard.writeText(url);
-    setCopied(hiveId);
-    setTimeout(() => setCopied(null), 2000);
+  const sorted = useMemo(
+    () => sortResearchers(filtered, sortKey),
+    [filtered, sortKey],
+  );
+
+  const displayed = sorted.slice(0, showCount);
+
+  const companyStats = useMemo(
+    () => getCompanyStats(RESEARCHERS).slice(0, 10),
+    [],
+  );
+
+  const uniqueCompanies = useMemo(
+    () => new Set(RESEARCHERS.map((r) => r.company)).size,
+    [],
+  );
+
+  const recentMovesCount = RECENT_MOVES.length;
+
+  const tierCounts = useMemo(() => {
+    const counts: Record<Tier, number> = { S: 0, A: 0, B: 0, C: 0 };
+    for (const r of RESEARCHERS) counts[r.tier]++;
+    return counts;
   }, []);
-
-  const resetUpload = useCallback(() => {
-    setUpload({ step: "idle" });
-    setFormName("");
-    setFormGpu("H100");
-    setFormOperator("");
-  }, []);
-
-  // Upload stats (only when file is parsed)
-  const uploadStats = useMemo(() => {
-    if (upload.step !== "parsed") return null;
-    const keeps = upload.experiments.filter((e) => e.status === "keep");
-    const bestBpb =
-      keeps.length > 0 ? Math.min(...keeps.map((e) => e.valBpb)) : 0;
-    return {
-      total: upload.experiments.length,
-      keeps: keeps.length,
-      bestBpb,
-      keepRate: Math.round((keeps.length / upload.experiments.length) * 100),
-    };
-  }, [upload]);
 
   return (
     <main className="grid-bg scanlines relative">
       {/* ═══ NAV ═══ */}
       <nav className="fixed top-0 w-full z-50 border-b border-line bg-void/80 backdrop-blur-md">
-        <div className="max-w-7xl mx-auto px-6 h-12 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-12 flex items-center justify-between">
           <Link
             href="/"
             className="font-display font-bold text-sm tracking-wider text-bright hover:text-neon transition-colors"
@@ -349,35 +256,35 @@ export default function Home() {
             THE HIVE
           </Link>
           <div className="flex gap-6 text-[11px] tracking-[0.15em] uppercase">
-            <span className="text-neon font-semibold">Experiments</span>
+            <span className="text-ember font-semibold">Roster</span>
             <Link
-              href="/researchers"
+              href="/experiments"
               className="text-ghost hover:text-bright transition-colors"
             >
-              Roster
+              Experiments
             </Link>
           </div>
         </div>
       </nav>
 
-      {/* ═══════════════════ HERO ═══════════════════ */}
-      <section className="relative min-h-screen flex flex-col items-center justify-center px-6 py-20">
+      {/* ═══ HERO ═══ */}
+      <section className="relative min-h-[60vh] md:min-h-[70vh] flex flex-col items-center justify-center px-4 sm:px-6 pt-20 pb-12 md:pt-24 md:pb-16">
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
-          {[400, 600, 800, 1050].map((size, i) => (
+          {[350, 550, 750, 1000].map((size, i) => (
             <motion.div
               key={size}
               className="absolute rounded-full border"
               style={{
                 width: size,
                 height: size,
-                borderColor: `rgba(0, 255, 178, ${0.04 - i * 0.007})`,
+                borderColor: `rgba(255, 181, 71, ${0.04 - i * 0.007})`,
               }}
               animate={{
-                opacity: [0.3, 0.7, 0.3],
-                scale: [1, 1.012, 1],
+                opacity: [0.3, 0.65, 0.3],
+                scale: [1, 1.015, 1],
               }}
               transition={{
-                duration: 5 + i * 1.5,
+                duration: 6 + i * 1.5,
                 repeat: Infinity,
                 ease: "easeInOut",
               }}
@@ -392,98 +299,94 @@ export default function Home() {
           className="relative z-10 text-center"
         >
           <div className="text-ghost text-[11px] tracking-[0.35em] uppercase mb-5 font-light">
-            autonomous research intelligence
+            ml talent intelligence
           </div>
-          <h1 className="font-display text-[clamp(4rem,12vw,10rem)] font-black leading-[0.85] tracking-tight mb-6 text-bright">
-            THE HIVE
+          <h1 className="font-display text-[clamp(3.5rem,10vw,9rem)] font-black leading-[0.85] tracking-tight mb-6 text-bright">
+            THE <span className="text-ember glow-ember">ROSTER</span>
           </h1>
-          <p className="text-dim text-base max-w-md mx-auto mb-16 leading-relaxed">
-            Where silicon minds optimize while you sleep. Global leaderboard
-            for{" "}
-            <a
-              href="https://github.com/karpathy/autoresearch"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-neon hover:underline underline-offset-2"
-            >
-              autoresearch
-            </a>{" "}
-            experiments.
+          <p className="text-dim text-base max-w-lg mx-auto mb-10 leading-relaxed">
+            The most valuable minds in AI. Who they work for, what they&apos;ve
+            built, and when they might move next.
           </p>
-        </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, scale: 0.96 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.3, duration: 0.7 }}
-          className="relative z-10 text-center mb-14"
-        >
-          <div className="text-ghost text-[10px] tracking-[0.25em] uppercase mb-4">
-            global best val_bpb
-          </div>
-          <DigitBoard value={globalBest.toFixed(6)} />
-          <div className="text-ghost text-xs mt-5 tracking-wide">
-            across{" "}
-            <span className="text-dim font-medium">
-              {totalExperiments.toLocaleString()}
-            </span>{" "}
-            experiments in{" "}
-            <span className="text-dim font-medium">{allHives.length}</span>{" "}
-            hives
+          <div className="flex gap-4 justify-center">
+            <a
+              href="#leaderboard"
+              className="px-7 py-3 bg-ember text-void font-bold text-xs tracking-[0.15em] hover:opacity-90 transition-opacity"
+            >
+              VIEW RANKINGS
+            </a>
+            <a
+              href="#companies"
+              className="px-7 py-3 border border-edge text-dim hover:text-bright hover:border-ember transition-colors text-xs tracking-[0.15em]"
+            >
+              COMPANY POWER
+            </a>
           </div>
         </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.7 }}
-          className="relative z-10 flex gap-4"
-        >
-          <a
-            href="#leaderboard"
-            className="px-7 py-3 bg-neon text-void font-bold text-xs tracking-[0.15em] hover:opacity-90 transition-opacity"
-          >
-            EXPLORE LEADERBOARD
-          </a>
-          <a
-            href="#upload"
-            className="px-7 py-3 border border-edge text-dim hover:text-bright hover:border-neon transition-colors text-xs tracking-[0.15em]"
-          >
-            UPLOAD RESULTS
-          </a>
-        </motion.div>
-
-        <motion.div
-          className="absolute bottom-10 text-ghost text-[10px] tracking-[0.4em] z-10"
-          animate={{ opacity: [0.15, 0.4, 0.15] }}
-          transition={{ duration: 3, repeat: Infinity }}
-        >
-          ↓ DESCEND ↓
-        </motion.div>
-        <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-b from-transparent to-void pointer-events-none z-10" />
+        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-b from-transparent to-void pointer-events-none z-10" />
       </section>
 
-      {/* ═══════════════════ STATS ═══════════════════ */}
+      {/* ═══ STATS ═══ */}
       <section className="border-y border-line relative z-10">
-        <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-5 divide-x divide-line">
-          <StatBox label="TOTAL EXPERIMENTS">
-            {totalExperiments.toLocaleString()}
+        <div className="max-w-7xl mx-auto grid grid-cols-3 md:grid-cols-5 divide-x divide-line">
+          <StatBox label="ON THE ROSTER">
+            <span className="text-ember">{RESEARCHERS.length}</span>
           </StatBox>
-          <StatBox label="ACTIVE HIVES">{allHives.length}</StatBox>
-          <StatBox label="GLOBAL BEST">
-            <span className="text-neon">{globalBest.toFixed(6)}</span>
+          <StatBox label="COMPANIES">{uniqueCompanies}</StatBox>
+          <StatBox label="RECENT MOVES">
+            <span className="text-blaze">{recentMovesCount}</span>
           </StatBox>
-          <StatBox label="AVG KEEP RATE">{avgKeepRate}%</StatBox>
-          <StatBox label="GPU PLATFORMS">
-            {new Set(allHives.map((h) => h.gpu)).size}
-          </StatBox>
+          <div className="hidden md:block">
+            <StatBox label="S-TIER LEGENDS">{tierCounts.S}</StatBox>
+          </div>
+          <div className="hidden md:block">
+            <StatBox label="A-TIER LEADERS">{tierCounts.A}</StatBox>
+          </div>
         </div>
       </section>
 
-      {/* ═══════════════════ LEADERBOARD ═══════════════════ */}
+      {/* ═══ TRANSFER TICKER ═══ */}
+      <section className="border-b border-line relative z-10 overflow-hidden bg-base/40">
+        <div className="py-3 px-4 sm:px-6">
+          <div className="flex items-center gap-4">
+            <span className="text-ember text-[10px] tracking-[0.2em] font-bold uppercase shrink-0">
+              TRANSFERS
+            </span>
+            <div className="overflow-hidden flex-1">
+              <div className="ticker-track">
+                {[...RECENT_MOVES, ...RECENT_MOVES].map((move, i) => (
+                  <span
+                    key={i}
+                    className="text-dim text-[11px] flex items-center gap-2"
+                  >
+                    <span className="text-bright font-medium">{move.name}</span>
+                    <span className="text-ghost">
+                      {move.from}
+                    </span>
+                    <span className="text-ember">→</span>
+                    <span className="text-ghost">
+                      {move.to}
+                    </span>
+                    <span className="text-ghost/50 text-[10px]">
+                      {move.date}
+                    </span>
+                    {i < RECENT_MOVES.length * 2 - 1 && (
+                      <span className="text-line mx-2">·</span>
+                    )}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ LEADERBOARD ═══ */}
       <section
         id="leaderboard"
-        className="max-w-7xl mx-auto px-6 py-20 relative z-10"
+        className="max-w-7xl mx-auto px-4 sm:px-6 py-12 md:py-20 relative z-10"
       >
         <motion.div
           initial={{ opacity: 0, y: 24 }}
@@ -491,217 +394,320 @@ export default function Home() {
           viewport={{ once: true, margin: "-80px" }}
           transition={{ duration: 0.6 }}
         >
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
+          <div className="flex flex-col gap-4 mb-6 md:mb-8">
             <div>
               <h2 className="font-display text-4xl md:text-5xl font-black tracking-tight mb-2">
-                LEADERBOARD
+                RANKINGS
               </h2>
               <p className="text-dim text-sm">
-                Ranked by lowest{" "}
-                <span className="text-ghost">val_bpb</span>. Lower is better.
+                Sorted by{" "}
+                <span className="text-ghost">{sortKey}</span>
+                {companyFilter !== "all" && (
+                  <>
+                    {" "}
+                    · filtered to{" "}
+                    <span className="text-ghost">
+                      {companyFilter === "__recent__"
+                        ? "recent moves"
+                        : companyFilter}
+                    </span>
+                  </>
+                )}
               </p>
             </div>
-            <div className="flex gap-1.5">
-              {GPU_OPTIONS.map((gpu) => (
+
+            {/* Filters */}
+            <div className="flex flex-col gap-3">
+              <div className="flex gap-1.5 flex-wrap">
                 <button
-                  key={gpu}
-                  onClick={() => setGpuFilter(gpu)}
-                  className={`px-4 py-2 text-[11px] tracking-wider transition-all cursor-pointer ${
-                    gpuFilter === gpu
-                      ? "bg-neon text-void font-bold"
+                  onClick={() => setCompanyFilter("all")}
+                  className={`px-2.5 py-1.5 text-[9px] sm:text-[10px] sm:px-3 tracking-wider transition-all cursor-pointer ${
+                    companyFilter === "all"
+                      ? "bg-ember text-void font-bold"
                       : "bg-raised text-dim hover:text-bright border border-line"
                   }`}
                 >
-                  {gpu === "all" ? "ALL" : gpu}
+                  ALL
                 </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="border border-line overflow-x-auto">
-            <div className="min-w-[680px]">
-              <div className="grid grid-cols-[48px_1fr_90px_140px_70px_80px_72px_36px] gap-3 px-5 py-3 bg-raised text-ghost text-[10px] tracking-[0.15em] uppercase border-b border-line">
-                <span>#</span>
-                <span>Hive</span>
-                <span>GPU</span>
-                <span>Best val_bpb</span>
-                <span>Runs</span>
-                <span>Delta</span>
-                <span></span>
-                <span></span>
-              </div>
-
-              {sorted.map((hive, i) => (
-                <motion.div
-                  key={hive.id}
-                  initial={{ opacity: 0, x: -10 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.04, duration: 0.35 }}
-                  className={`grid grid-cols-[48px_1fr_90px_140px_70px_80px_72px_36px] gap-3 px-5 py-4 items-center border-b border-line/30 hover:bg-hover transition-colors group ${
-                    i === 0 ? "box-glow bg-raised/40" : ""
+                <button
+                  onClick={() => setCompanyFilter("__recent__")}
+                  className={`px-2.5 py-1.5 text-[9px] sm:text-[10px] sm:px-3 tracking-wider transition-all cursor-pointer ${
+                    companyFilter === "__recent__"
+                      ? "bg-blaze text-void font-bold"
+                      : "bg-raised text-blaze/70 hover:text-blaze border border-blaze/20"
                   }`}
+                  title="Show researchers who moved in the last 18 months"
                 >
-                  <RankBadge rank={i + 1} />
-                  <div className="min-w-0">
-                    <div className="text-bright text-sm font-semibold truncate">
-                      {hive.name}
-                    </div>
-                    <div className="text-ghost text-[11px]">
-                      {hive.operator}
-                    </div>
-                  </div>
-                  <GpuChip gpu={hive.gpu} />
-                  <div
-                    className={`tabular text-sm font-semibold ${
-                      i === 0 ? "text-neon glow-neon" : "text-bright"
+                  RECENT MOVES
+                </button>
+                {COMPANY_FILTER_LIST.map((company) => (
+                  <button
+                    key={company}
+                    onClick={() => setCompanyFilter(company)}
+                    className={`px-2.5 py-1.5 text-[9px] sm:text-[10px] sm:px-3 tracking-wider transition-all cursor-pointer ${
+                      companyFilter === company
+                        ? "bg-ember text-void font-bold"
+                        : "bg-raised text-dim hover:text-bright border border-line"
                     }`}
                   >
-                    {hive.bestValBpb.toFixed(6)}
-                  </div>
-                  <div className="tabular text-dim text-sm">
-                    {hive.totalExperiments}
-                  </div>
-                  <div className="tabular text-ember text-sm font-medium">
-                    &minus;{hive.improvementPct}%
-                  </div>
-                  <Sparkline
-                    data={getTrajectory(hive.experiments)}
-                    color={HIVE_COLORS[hive.name] || "#00FFB2"}
-                  />
-                  <button
-                    onClick={() => handleShare(hive.id)}
-                    className="text-ghost hover:text-neon transition-colors p-1 opacity-0 group-hover:opacity-100 cursor-pointer"
-                    title="Copy share link"
-                  >
-                    {copied === hive.id ? (
-                      <span className="text-neon text-[10px] font-bold">
-                        ✓
-                      </span>
-                    ) : (
-                      <ShareIcon />
-                    )}
+                    {company === "Google DeepMind"
+                      ? "DEEPMIND"
+                      : company === "Thinking Machines Lab"
+                        ? "TML"
+                        : company.toUpperCase()}
                   </button>
-                </motion.div>
-              ))}
+                ))}
+              </div>
+
+              <div className="flex gap-1.5 flex-wrap">
+                {(
+                  [
+                    ["influence", "Composite score: tier + h-index + citations"],
+                    ["hIndex", "Papers with at least that many citations"],
+                    ["citations", "Total times their work has been cited"],
+                    ["tenure", "How long at their current company"],
+                    ["heat", "Likelihood of switching companies soon"],
+                  ] as [SortKey, string][]
+                ).map(([key, tip]) => (
+                  <button
+                    key={key}
+                    onClick={() => setSortKey(key)}
+                    title={tip}
+                    className={`px-2.5 py-1.5 text-[9px] sm:text-[10px] sm:px-3 tracking-wider transition-all cursor-pointer ${
+                      sortKey === key
+                        ? "bg-bright text-void font-bold"
+                        : "bg-raised text-ghost hover:text-bright border border-line"
+                    }`}
+                  >
+                    {key === "hIndex" ? "h-INDEX" : key.toUpperCase()}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
+
+          {/* Mobile cards */}
+          <div className="md:hidden flex flex-col gap-2">
+            {displayed.map((r, i) => (
+              <motion.div
+                key={r.id}
+                initial={{ opacity: 0, y: 8 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: Math.min(i * 0.02, 0.4), duration: 0.3 }}
+              >
+                <MobileCard
+                  r={r}
+                  rank={i + 1}
+                  showFrom={companyFilter === "__recent__"}
+                />
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Desktop table */}
+          <div className="hidden md:block border border-line overflow-x-auto">
+            <div className="min-w-[900px]">
+              {/* Header */}
+              <div className="grid grid-cols-[44px_1fr_130px_130px_60px_70px_36px_52px_76px] gap-3 px-5 py-3 bg-raised text-ghost text-[10px] tracking-[0.15em] uppercase border-b border-line">
+                <span title="Rank by influence score" className="cursor-help border-b border-dotted border-ghost/30">#</span>
+                <span title="Name and current role" className="cursor-help border-b border-dotted border-ghost/30">Researcher</span>
+                <span title="Current employer and how long they've been there" className="cursor-help border-b border-dotted border-ghost/30">Company</span>
+                <span title="Where they worked before" className="cursor-help border-b border-dotted border-ghost/30">Previous</span>
+                <span title="h-index: number of papers with at least that many citations" className="cursor-help border-b border-dotted border-ghost/30">h-idx</span>
+                <span title="Total number of times their papers have been cited" className="cursor-help border-b border-dotted border-ghost/30">Citations</span>
+                <span title="S = legend, A = senior leader, B = principal, C = rising star" className="cursor-help border-b border-dotted border-ghost/30">Tier</span>
+                <span title="How likely they are to switch companies (5 = very likely)" className="cursor-help border-b border-dotted border-ghost/30">Heat</span>
+                <span title="Links to X, LinkedIn, and Google Scholar" className="cursor-help border-b border-dotted border-ghost/30">Links</span>
+              </div>
+
+              {/* Rows */}
+              {displayed.map((r, i) => {
+                const heat = computeHeat(r);
+                const tenure = computeTenureMonths(r.joined);
+                return (
+                  <motion.div
+                    key={r.id}
+                    initial={{ opacity: 0, x: -10 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: Math.min(i * 0.02, 0.5), duration: 0.3 }}
+                    className={`grid grid-cols-[44px_1fr_130px_130px_60px_70px_36px_52px_76px] gap-3 px-5 py-3.5 items-center border-b border-line/30 hover:bg-hover transition-colors group ${
+                      i === 0 ? "box-glow-ember bg-raised/40" : ""
+                    }`}
+                  >
+                    {/* Rank */}
+                    <div
+                      className={`rank-badge ${
+                        i === 0
+                          ? "first"
+                          : i === 1
+                            ? "second"
+                            : i === 2
+                              ? "third"
+                              : "rest"
+                      }`}
+                    >
+                      {i + 1}
+                    </div>
+
+                    {/* Name + Role */}
+                    <div className="min-w-0">
+                      <div className="text-bright text-sm font-semibold truncate">
+                        {r.name}
+                      </div>
+                      <div className="text-ghost text-[11px] truncate">
+                        {r.role}
+                      </div>
+                    </div>
+
+                    {/* Company + Tenure */}
+                    <div className="min-w-0">
+                      <CompanyBadge company={r.company} />
+                      <div className="text-ghost text-[10px] mt-1">
+                        {formatTenure(tenure)}
+                        {companyFilter === "__recent__" && r.prevCompany && (
+                          <span className="text-blaze/70 ml-1.5">
+                            ← {r.prevCompany}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Previous */}
+                    <div className="min-w-0">
+                      <div className="text-dim text-[12px] truncate">
+                        {r.prevCompany}
+                      </div>
+                      <div className="text-ghost text-[10px]">
+                        {r.prevTenure > 0 ? formatTenure(r.prevTenure) : "—"}
+                      </div>
+                    </div>
+
+                    {/* h-index */}
+                    <div className="tabular text-dim text-sm">
+                      {r.hIndex > 0 ? r.hIndex : "—"}
+                    </div>
+
+                    {/* Citations */}
+                    <div className="tabular text-dim text-sm">
+                      {r.citations > 0 ? formatCitations(r.citations) : "—"}
+                    </div>
+
+                    {/* Tier */}
+                    <TierBadge tier={r.tier} />
+
+                    {/* Heat */}
+                    <HeatBar heat={heat} />
+
+                    {/* Social links */}
+                    <div className="flex items-center gap-1">
+                      {r.twitter && (
+                        <a
+                          href={`https://x.com/${r.twitter}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="social-icon"
+                          title={`@${r.twitter}`}
+                        >
+                          <XIcon />
+                        </a>
+                      )}
+                      {r.linkedin && (
+                        <a
+                          href={`https://linkedin.com/in/${r.linkedin}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="social-icon"
+                          title="LinkedIn"
+                        >
+                          <LinkedInIcon />
+                        </a>
+                      )}
+                      {r.scholar && (
+                        <a
+                          href={`https://scholar.google.com/citations?user=${r.scholar}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="social-icon"
+                          title="Google Scholar"
+                        >
+                          <ScholarIcon />
+                        </a>
+                      )}
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Show more */}
+          {showCount < sorted.length && (
+            <div className="flex justify-center mt-8">
+              <button
+                onClick={() => setShowCount((c) => c + 50)}
+                className="px-8 py-3 border border-edge text-dim hover:text-ember hover:border-ember transition-colors text-xs tracking-[0.15em] cursor-pointer"
+              >
+                SHOW MORE ({sorted.length - showCount} remaining)
+              </button>
+            </div>
+          )}
         </motion.div>
       </section>
 
-      {/* ═══════════════════ TRAJECTORY ═══════════════════ */}
-      <section className="max-w-7xl mx-auto px-6 py-20 relative z-10">
+      {/* ═══ NOTABLE WORK HIGHLIGHTS ═══ */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 pb-12 md:pb-20 relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-80px" }}
           transition={{ duration: 0.6 }}
         >
-          <h2 className="font-display text-4xl md:text-5xl font-black tracking-tight mb-2">
-            TRAJECTORY
+          <h2 className="font-display text-3xl md:text-4xl font-black tracking-tight mb-2">
+            NOTABLE WORKS
           </h2>
-          <p className="text-dim text-sm mb-10">
-            val_bpb progression across kept experiments.{" "}
-            <span className="text-ghost">Lower = better.</span>
+          <p className="text-dim text-sm mb-8">
+            Breakthrough papers and projects from the roster.
           </p>
 
-          <div className="border border-line bg-base/50 p-4 md:p-6 pb-2">
-            <ResponsiveContainer width="100%" height={380}>
-              <AreaChart
-                data={chartData}
-                margin={{ top: 10, right: 10, left: 10, bottom: 0 }}
-              >
-                <defs>
-                  {allHives.map((hive) => (
-                    <linearGradient
-                      key={hive.id}
-                      id={`grad-${hive.id}`}
-                      x1="0"
-                      y1="0"
-                      x2="0"
-                      y2="1"
-                    >
-                      <stop
-                        offset="0%"
-                        stopColor={HIVE_COLORS[hive.name] || "#00FFB2"}
-                        stopOpacity={0.15}
-                      />
-                      <stop
-                        offset="100%"
-                        stopColor={HIVE_COLORS[hive.name] || "#00FFB2"}
-                        stopOpacity={0}
-                      />
-                    </linearGradient>
-                  ))}
-                </defs>
-                <CartesianGrid
-                  stroke="rgba(30, 30, 50, 0.5)"
-                  strokeDasharray="3 6"
-                />
-                <XAxis
-                  dataKey="experiment"
-                  stroke="transparent"
-                  tick={{ fill: "#4A4A64", fontSize: 10 }}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <YAxis
-                  stroke="transparent"
-                  tick={{ fill: "#4A4A64", fontSize: 10 }}
-                  tickLine={false}
-                  axisLine={false}
-                  domain={["auto", "auto"]}
-                  tickFormatter={(v: number) => v.toFixed(3)}
-                  width={52}
-                />
-                <Tooltip content={<ChartTooltip />} />
-                {allHives.map((hive) => (
-                  <Area
-                    key={hive.id}
-                    type="monotone"
-                    dataKey={hive.name}
-                    stroke={HIVE_COLORS[hive.name] || "#00FFB2"}
-                    strokeWidth={2}
-                    fill={`url(#grad-${hive.id})`}
-                    dot={false}
-                    activeDot={{
-                      r: 3,
-                      stroke: HIVE_COLORS[hive.name] || "#00FFB2",
-                      strokeWidth: 2,
-                      fill: "#0F0F14",
-                    }}
-                  />
-                ))}
-              </AreaChart>
-            </ResponsiveContainer>
-
-            <div className="flex flex-wrap gap-x-5 gap-y-1.5 pt-3 pb-2 px-1 border-t border-line/30 mt-1">
-              {allHives.map((hive) => (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {RESEARCHERS.filter((r) => r.tier === "S")
+              .slice(0, 9)
+              .map((r) => (
                 <div
-                  key={hive.id}
-                  className="flex items-center gap-2 text-[11px] text-dim"
+                  key={r.id}
+                  className="border border-line bg-base/60 p-5 hover:border-ember/30 transition-colors"
                 >
-                  <div
-                    className="w-3 h-[2px] rounded-full"
-                    style={{
-                      background: HIVE_COLORS[hive.name] || "#00FFB2",
-                    }}
-                  />
-                  {hive.name}
-                  <span className="text-ghost tabular ml-0.5">
-                    ({hive.bestValBpb.toFixed(4)})
-                  </span>
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <div className="text-bright text-sm font-semibold">
+                        {r.name}
+                      </div>
+                      <div className="text-ghost text-[11px]">{r.company}</div>
+                    </div>
+                    <TierBadge tier={r.tier} />
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {r.notable.map((work) => (
+                      <span
+                        key={work}
+                        className="text-[10px] px-2 py-0.5 bg-raised border border-line text-dim rounded"
+                      >
+                        {work}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               ))}
-            </div>
           </div>
         </motion.div>
       </section>
 
-      {/* ═══════════════════ UPLOAD ═══════════════════ */}
+      {/* ═══ COMPANY POWER RANKINGS ═══ */}
       <section
-        id="upload"
-        className="max-w-2xl mx-auto px-6 py-20 relative z-10"
+        id="companies"
+        className="max-w-7xl mx-auto px-4 sm:px-6 py-12 md:py-20 relative z-10"
       >
         <motion.div
           initial={{ opacity: 0, y: 24 }}
@@ -710,258 +716,107 @@ export default function Home() {
           transition={{ duration: 0.6 }}
         >
           <h2 className="font-display text-4xl md:text-5xl font-black tracking-tight mb-2">
-            UPLOAD
+            COMPANY POWER
           </h2>
-          <p className="text-dim text-sm mb-8">
-            Drop your{" "}
-            <span className="text-ghost font-medium">results.tsv</span> to
-            join the leaderboard.
+          <p className="text-dim text-sm mb-10">
+            Who&apos;s winning the talent war.{" "}
+            <span className="text-ghost">
+              Based on roster count, research output, and net talent flow.
+            </span>
           </p>
 
-          {/* ── IDLE: Drop zone ── */}
-          {upload.step === "idle" && (
-            <div
-              className={`upload-zone p-12 text-center cursor-pointer ${isDragActive ? "drag-active" : ""}`}
-              onDragOver={(e) => {
-                e.preventDefault();
-                setIsDragActive(true);
-              }}
-              onDragLeave={() => setIsDragActive(false)}
-              onDrop={handleDrop}
-              onClick={() => document.getElementById("file-input")?.click()}
-            >
-              <input
-                id="file-input"
-                type="file"
-                accept=".tsv,.txt,.csv"
-                className="hidden"
-                onChange={handleFileInput}
-              />
-              <div className="text-ghost text-xs tracking-[0.2em] mb-3">
-                {isDragActive
-                  ? "RELEASE TO UPLOAD"
-                  : "// DROP results.tsv HERE"}
-              </div>
-              <div className="text-dim/60 text-[11px]">or click to browse</div>
-            </div>
-          )}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {companyStats.map((co, i) => {
+              const color = COMPANY_COLORS[co.name] || "#888";
+              return (
+                <motion.div
+                  key={co.name}
+                  initial={{ opacity: 0, y: 16 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.06, duration: 0.4 }}
+                  className="border border-line bg-base/60 p-5 hover:bg-hover transition-colors relative overflow-hidden group"
+                >
+                  <div
+                    className="absolute top-0 left-0 w-full h-[2px]"
+                    style={{ background: color }}
+                  />
 
-          {/* ── PARSED: Stats + Form ── */}
-          {upload.step === "parsed" && uploadStats && (
-            <div className="border border-line bg-base/80 p-8">
-              <div className="text-neon text-xs tracking-[0.15em] mb-4 font-semibold">
-                ✓ FILE PARSED
-              </div>
-
-              <div className="grid grid-cols-3 gap-4 mb-8">
-                <div>
-                  <div className="text-ghost text-[10px] tracking-wider uppercase mb-1">
-                    Experiments
-                  </div>
-                  <div className="text-bright tabular font-medium text-lg">
-                    {uploadStats.total}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-ghost text-[10px] tracking-wider uppercase mb-1">
-                    Best val_bpb
-                  </div>
-                  <div className="text-neon tabular font-medium text-lg">
-                    {uploadStats.bestBpb.toFixed(6)}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-ghost text-[10px] tracking-wider uppercase mb-1">
-                    Keep Rate
-                  </div>
-                  <div className="text-bright tabular font-medium text-lg">
-                    {uploadStats.keepRate}%
-                  </div>
-                </div>
-              </div>
-
-              <div className="border-t border-line pt-6 mb-6">
-                <div className="text-ghost text-[10px] tracking-[0.2em] uppercase mb-5">
-                  JOIN THE LEADERBOARD
-                </div>
-
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-dim text-xs tracking-wider block mb-1.5">
-                      HIVE NAME
-                    </label>
-                    <input
-                      type="text"
-                      value={formName}
-                      onChange={(e) => setFormName(e.target.value)}
-                      placeholder="e.g. Hive Nebula"
-                      className="w-full bg-raised border border-line px-4 py-2.5 text-sm text-bright placeholder:text-ghost/50 focus:border-neon focus:outline-none transition-colors"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="flex items-start justify-between mb-4">
                     <div>
-                      <label className="text-dim text-xs tracking-wider block mb-1.5">
-                        GPU
-                      </label>
-                      <select
-                        value={formGpu}
-                        onChange={(e) => setFormGpu(e.target.value as GPU)}
-                        className="w-full bg-raised border border-line px-4 py-2.5 text-sm text-bright focus:border-neon focus:outline-none transition-colors appearance-none cursor-pointer"
+                      <div
+                        className="text-sm font-bold"
+                        style={{ color }}
                       >
-                        {GPU_LIST.map((g) => (
-                          <option key={g} value={g}>
-                            {g}
-                          </option>
-                        ))}
-                      </select>
+                        {co.name}
+                      </div>
+                      <div className="text-ghost text-[10px] tracking-wider mt-0.5">
+                        #{i + 1} POWER RANK
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-bright text-lg font-bold tabular">
+                        {co.count}
+                      </div>
+                      <div className="text-ghost text-[10px]">on roster</div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-3 text-center">
+                    <div>
+                      <div className="text-dim text-sm tabular font-medium">
+                        {co.avgHIndex}
+                      </div>
+                      <div className="text-ghost text-[9px] tracking-wider uppercase">
+                        avg h
+                      </div>
                     </div>
                     <div>
-                      <label className="text-dim text-xs tracking-wider block mb-1.5">
-                        OPERATOR
-                      </label>
-                      <input
-                        type="text"
-                        value={formOperator}
-                        onChange={(e) => setFormOperator(e.target.value)}
-                        placeholder="@your_handle"
-                        className="w-full bg-raised border border-line px-4 py-2.5 text-sm text-bright placeholder:text-ghost/50 focus:border-neon focus:outline-none transition-colors"
-                      />
+                      <div className="text-dim text-sm tabular font-medium">
+                        {formatCitations(co.totalCitations)}
+                      </div>
+                      <div className="text-ghost text-[9px] tracking-wider uppercase">
+                        total cit
+                      </div>
+                    </div>
+                    <div>
+                      <div
+                        className={`text-sm tabular font-bold ${
+                          co.netFlow > 0
+                            ? "text-neon"
+                            : co.netFlow < 0
+                              ? "text-blaze"
+                              : "text-dim"
+                        }`}
+                      >
+                        {co.netFlow > 0 ? `+${co.netFlow}` : co.netFlow}
+                      </div>
+                      <div className="text-ghost text-[9px] tracking-wider uppercase">
+                        net flow
+                      </div>
                     </div>
                   </div>
-                </div>
-              </div>
-
-              <div className="flex gap-3">
-                <button
-                  onClick={resetUpload}
-                  className="px-5 py-2.5 text-xs tracking-wider border border-line text-dim hover:text-bright transition-colors cursor-pointer"
-                >
-                  CANCEL
-                </button>
-                <button
-                  onClick={handleSubmit}
-                  className="flex-1 py-2.5 bg-neon text-void font-bold text-xs tracking-[0.15em] hover:opacity-90 transition-opacity cursor-pointer"
-                >
-                  SUBMIT TO LEADERBOARD
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* ── SUBMITTING ── */}
-          {upload.step === "submitting" && (
-            <div className="border border-line bg-base/80 p-12 text-center">
-              <div className="text-neon text-xs tracking-[0.2em] animate-pulse">
-                UPLOADING TO THE HIVE...
-              </div>
-            </div>
-          )}
-
-          {/* ── DONE: Share URL ── */}
-          {upload.step === "done" && (
-            <div className="border border-neon/30 bg-base/80 p-8 box-glow">
-              <div className="text-neon text-xs tracking-[0.15em] mb-6 font-semibold">
-                ✓ YOUR HIVE IS LIVE
-              </div>
-
-              <div className="mb-6">
-                <div className="text-ghost text-[10px] tracking-wider uppercase mb-2">
-                  SHARE LINK
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 bg-raised border border-line px-4 py-2.5 text-sm text-dim tabular truncate">
-                    {typeof window !== "undefined"
-                      ? `${window.location.origin}/share/${upload.shareId}`
-                      : `/share/${upload.shareId}`}
-                  </div>
-                  <button
-                    onClick={() => handleShare(upload.shareId)}
-                    className="px-4 py-2.5 border border-edge text-dim hover:text-neon hover:border-neon transition-colors text-xs tracking-wider cursor-pointer shrink-0"
-                  >
-                    {copied === upload.shareId ? "✓" : "COPY"}
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex gap-3">
-                <a
-                  href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(
-                    `Just submitted my autoresearch results to THE HIVE leaderboard 🐝\n\n${typeof window !== "undefined" ? `${window.location.origin}/share/${upload.shareId}` : ""}`,
-                  )}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex-1 py-2.5 bg-neon text-void font-bold text-xs tracking-[0.1em] text-center hover:opacity-90 transition-opacity"
-                >
-                  SHARE ON X
-                </a>
-                <button
-                  onClick={resetUpload}
-                  className="px-5 py-2.5 text-xs tracking-wider border border-line text-dim hover:text-bright transition-colors cursor-pointer"
-                >
-                  UPLOAD ANOTHER
-                </button>
-              </div>
-            </div>
-          )}
-        </motion.div>
-      </section>
-
-      {/* ═══════════════════ ACTIVITY FEED ═══════════════════ */}
-      <section className="max-w-7xl mx-auto px-6 py-20 relative z-10">
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-80px" }}
-          transition={{ duration: 0.6 }}
-        >
-          <h2 className="font-display text-3xl md:text-4xl font-black tracking-tight mb-6">
-            ACTIVITY FEED
-          </h2>
-          <div className="border border-line bg-base/60 p-5 max-h-80 overflow-y-auto">
-            {activity.map((entry, i) => (
-              <div
-                key={i}
-                className="flex items-center gap-3 md:gap-4 py-1.5 border-b border-line/15 text-[11px] md:text-xs"
-              >
-                <span className="text-ghost w-20 md:w-24 shrink-0 truncate">
-                  {entry.hiveName}
-                </span>
-                <span
-                  className={`w-12 md:w-14 shrink-0 font-semibold tracking-wide ${
-                    entry.status === "keep"
-                      ? "text-neon"
-                      : entry.status === "crash"
-                        ? "text-blaze"
-                        : "text-ember"
-                  }`}
-                >
-                  {entry.status}
-                </span>
-                <span className="text-dim truncate flex-1 min-w-0">
-                  {entry.description}
-                </span>
-                <span className="text-ghost tabular w-20 text-right shrink-0">
-                  {entry.valBpb > 0 ? entry.valBpb.toFixed(6) : "──────"}
-                </span>
-              </div>
-            ))}
-            <div className="pt-3 text-neon text-xs">
-              <span
-                style={{ animation: "blink-cursor 1s step-end infinite" }}
-              >
-                █
-              </span>
-            </div>
+                </motion.div>
+              );
+            })}
           </div>
         </motion.div>
       </section>
 
-      {/* ═══════════════════ FOOTER ═══════════════════ */}
-      <footer className="border-t border-line py-10 px-6 relative z-10">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+      {/* ═══ FOOTER ═══ */}
+      <footer className="border-t border-line py-8 md:py-10 px-4 sm:px-6 relative z-10">
+        <div className="max-w-7xl mx-auto flex flex-col items-center md:flex-row md:justify-between gap-3 text-center md:text-left">
           <div className="text-ghost text-xs">
-            built for the silicon minds ·{" "}
+            built with love by{" "}
+            <span className="text-dim font-medium">Ben Schippers</span>
+            {" "}·{" "}
+            <Link
+              href="/"
+              className="text-dim hover:text-neon transition-colors"
+            >
+              THE HIVE
+            </Link>{" "}
+            ·{" "}
             <a
               href="https://github.com/karpathy/autoresearch"
               target="_blank"
@@ -973,7 +828,10 @@ export default function Home() {
             by @karpathy
           </div>
           <div className="text-ghost/50 text-[10px] tabular tracking-wide">
-            sys.uptime: ∞ · agents.status: NOMINAL · val_bpb.target: 0.000000
+            data from public sources · arXiv · Google Scholar · press coverage
+            <span className="block mt-1 text-ghost/30">
+              last updated: Mar 2026
+            </span>
           </div>
         </div>
       </footer>
