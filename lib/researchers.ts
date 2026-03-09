@@ -73,6 +73,11 @@ export const COMPANY_COLORS: Record<string, string> = {
   "AI2": "#22D3EE",
   "Hugging Face": "#FFD21E",
   "Perplexity AI": "#20B8CD",
+  "Thinking Machines Lab": "#E040FB",
+  "Boson AI": "#FF6F61",
+  "Caltech": "#FF6C0C",
+  "Center for AI Safety": "#34D399",
+  "Contextual AI": "#94A3B8",
 };
 
 export const COMPANY_FILTER_LIST = [
@@ -80,6 +85,7 @@ export const COMPANY_FILTER_LIST = [
   "Anthropic",
   "Google DeepMind",
   "Meta",
+  "Thinking Machines Lab",
   "xAI",
   "Mistral",
   "Microsoft",
@@ -99,13 +105,13 @@ export const RESEARCHERS: Researcher[] = [
   { id: "jakub-pachocki", name: "Jakub Pachocki", role: "Chief Scientist", company: "OpenAI", joined: "2017-01", prevCompany: "CMU", prevTenure: 24, tier: "A", notable: ["GPT-4 technical lead", "Chief Scientist post-Ilya"], hIndex: 18, citations: 8000, papers: 25 },
   { id: "mark-chen", name: "Mark Chen", role: "SVP Research", company: "OpenAI", joined: "2018-06", prevCompany: "MIT", prevTenure: 24, tier: "A", notable: ["Codex", "GPT-4V", "SVP Research"], hIndex: 22, citations: 15000, papers: 20, twitter: "markchen90" },
   { id: "alec-radford", name: "Alec Radford", role: "Research Scientist", company: "OpenAI", joined: "2016-06", prevCompany: "Indico Data", prevTenure: 24, tier: "A", notable: ["GPT-1/2", "CLIP", "DALL-E", "Whisper"], hIndex: 30, citations: 120000, papers: 18 },
-  { id: "lilian-weng", name: "Lilian Weng", role: "VP Research", company: "OpenAI", joined: "2018-05", prevCompany: "Goldman Sachs", prevTenure: 36, tier: "B", notable: ["Safety systems lead", "lilianweng.github.io blog"], hIndex: 15, citations: 5000, papers: 15, twitter: "lilianweng" },
-  { id: "barret-zoph", name: "Barret Zoph", role: "VP Research", company: "OpenAI", joined: "2019-09", prevCompany: "Google Brain", prevTenure: 36, tier: "B", notable: ["Neural architecture search", "Post-training lead"], hIndex: 28, citations: 35000, papers: 22 },
+  { id: "lilian-weng", name: "Lilian Weng", role: "Co-Founder", company: "Thinking Machines Lab", joined: "2025-02", prevCompany: "OpenAI", prevTenure: 78, tier: "B", notable: ["Safety systems lead", "lilianweng.github.io blog", "TML co-founder"], hIndex: 15, citations: 5000, papers: 15, twitter: "lilianweng" },
+  { id: "barret-zoph", name: "Barret Zoph", role: "CTO", company: "Thinking Machines Lab", joined: "2025-02", prevCompany: "OpenAI", prevTenure: 60, tier: "B", notable: ["Neural architecture search", "Post-training lead", "TML CTO"], hIndex: 28, citations: 35000, papers: 22 },
   { id: "noam-brown", name: "Noam Brown", role: "Research Scientist", company: "OpenAI", joined: "2022-07", prevCompany: "Meta FAIR", prevTenure: 48, tier: "B", notable: ["Libratus poker AI", "o1 reasoning"], hIndex: 20, citations: 8000, papers: 25, twitter: "polynoamuth" },
   { id: "jason-wei", name: "Jason Wei", role: "Research Scientist", company: "OpenAI", joined: "2023-06", prevCompany: "Google Brain", prevTenure: 36, tier: "B", notable: ["Chain-of-thought prompting", "Scaling analysis"], hIndex: 32, citations: 25000, papers: 40 },
   { id: "hyung-won-chung", name: "Hyung Won Chung", role: "Research Scientist", company: "OpenAI", joined: "2023-08", prevCompany: "Google Brain", prevTenure: 36, tier: "B", notable: ["Flan-T5", "Scaling instruction tuning"], hIndex: 22, citations: 18000, papers: 28 },
   { id: "wojciech-zaremba", name: "Wojciech Zaremba", role: "Co-founder & Head of Codex", company: "OpenAI", joined: "2015-12", prevCompany: "NYU / Facebook AI", prevTenure: 24, tier: "A", notable: ["OpenAI co-founder", "Codex/code generation lead"], hIndex: 25, citations: 20000, papers: 22 },
-  { id: "bob-mcgrew", name: "Bob McGrew", role: "Former Chief Research Officer", company: "OpenAI", joined: "2016-04", prevCompany: "Palantir", prevTenure: 84, tier: "A", notable: ["Chief Research Officer", "Scaled research org to 200+"], hIndex: 5, citations: 1000, papers: 5 },
+  { id: "bob-mcgrew", name: "Bob McGrew", role: "Research", company: "Thinking Machines Lab", joined: "2025-04", prevCompany: "OpenAI", prevTenure: 101, tier: "A", notable: ["Former OpenAI CRO", "Scaled research org to 200+"], hIndex: 5, citations: 1000, papers: 5 },
 
   // ── Anthropic ───────────────────────────────────────────
   { id: "dario-amodei", name: "Dario Amodei", role: "CEO", company: "Anthropic", joined: "2021-01", prevCompany: "OpenAI", prevTenure: 48, tier: "S", notable: ["Anthropic founder", "Claude series", "Scaling laws"], hIndex: 35, citations: 45000, papers: 30, twitter: "DarioAmodei", linkedin: "dario-amodei" },
@@ -116,8 +122,8 @@ export const RESEARCHERS: Researcher[] = [
   { id: "sam-mccandlish", name: "Sam McCandlish", role: "Co-founder", company: "Anthropic", joined: "2021-01", prevCompany: "OpenAI", prevTenure: 36, tier: "A", notable: ["Scaling laws co-author", "Anthropic co-founder"], hIndex: 18, citations: 15000, papers: 12 },
   { id: "jack-clark", name: "Jack Clark", role: "Co-founder & Head of Policy", company: "Anthropic", joined: "2021-01", prevCompany: "OpenAI", prevTenure: 36, tier: "A", notable: ["AI Index Report", "Policy leadership"], hIndex: 8, citations: 3000, papers: 10, twitter: "jackclarkSF" },
   { id: "jan-leike", name: "Jan Leike", role: "Head of Alignment", company: "Anthropic", joined: "2024-05", prevCompany: "OpenAI", prevTenure: 48, tier: "A", notable: ["Superalignment co-lead", "RLHF research"], hIndex: 25, citations: 12000, papers: 30, twitter: "janleike" },
-  { id: "john-schulman", name: "John Schulman", role: "Research", company: "Anthropic", joined: "2024-08", prevCompany: "OpenAI", prevTenure: 96, tier: "A", notable: ["PPO algorithm", "OpenAI co-founder", "RLHF pioneer"], hIndex: 40, citations: 90000, papers: 30 },
-  { id: "durk-kingma", name: "Durk Kingma", role: "Research Scientist", company: "Anthropic", joined: "2024-10", prevCompany: "OpenAI", prevTenure: 36, tier: "A", notable: ["VAE co-inventor", "Adam optimizer", "Glow"], hIndex: 35, citations: 120000, papers: 20 },
+  { id: "john-schulman", name: "John Schulman", role: "Chief Scientist", company: "Thinking Machines Lab", joined: "2025-02", prevCompany: "Anthropic", prevTenure: 5, tier: "A", notable: ["PPO algorithm", "OpenAI co-founder", "RLHF pioneer"], hIndex: 40, citations: 90000, papers: 30 },
+  { id: "durk-kingma", name: "Durk Kingma", role: "Research Scientist", company: "Anthropic", joined: "2024-10", prevCompany: "Google DeepMind", prevTenure: 72, tier: "A", notable: ["VAE co-inventor", "Adam optimizer", "Glow"], hIndex: 35, citations: 120000, papers: 20 },
   { id: "nicholas-carlini", name: "Nicholas Carlini", role: "Research Scientist", company: "Anthropic", joined: "2025-01", prevCompany: "Google DeepMind", prevTenure: 84, tier: "B", notable: ["Adversarial ML", "LLM security research"], hIndex: 55, citations: 35000, papers: 80, twitter: "nicholas_carlini", website: "https://nicholas.carlini.com" },
   { id: "julian-schrittwieser", name: "Julian Schrittwieser", role: "Research Scientist", company: "Anthropic", joined: "2024-10", prevCompany: "Google DeepMind", prevTenure: 120, tier: "B", notable: ["MuZero first author", "AlphaZero", "AlphaGo"], hIndex: 18, citations: 20000, papers: 12 },
   { id: "andrea-vallone", name: "Andrea Vallone", role: "Alignment Research", company: "Anthropic", joined: "2026-01", prevCompany: "OpenAI", prevTenure: 36, tier: "B", notable: ["Model policy lead at OpenAI", "Safety research"], hIndex: 8, citations: 2000, papers: 8 },
@@ -168,13 +174,13 @@ export const RESEARCHERS: Researcher[] = [
   // ── NVIDIA ──────────────────────────────────────────────
   { id: "jim-fan", name: "Jim Fan", role: "Senior Research Lead", company: "NVIDIA", joined: "2022-01", prevCompany: "Stanford PhD", prevTenure: 48, tier: "B", notable: ["Voyager agent", "Foundation agents", "AI explainer"], hIndex: 18, citations: 8000, papers: 20, twitter: "DrJimFan" },
   { id: "bryan-catanzaro", name: "Bryan Catanzaro", role: "VP Applied Deep Learning", company: "NVIDIA", joined: "2014-01", prevCompany: "Baidu SVAIL", prevTenure: 24, tier: "B", notable: ["NVIDIA DL infra", "GPU computing for AI"], hIndex: 30, citations: 18000, papers: 35, twitter: "ctnzr" },
-  { id: "anima-anandkumar", name: "Anima Anandkumar", role: "Former VP Research (now Caltech)", company: "NVIDIA", joined: "2018-06", prevCompany: "Amazon/Caltech", prevTenure: 48, tier: "A", notable: ["Tensor methods", "AI for science", "Caltech professor"], hIndex: 60, citations: 30000, papers: 130, twitter: "AnimaAnandkumar" },
+  { id: "anima-anandkumar", name: "Anima Anandkumar", role: "Bren Professor of Computing", company: "Caltech", joined: "2024-01", prevCompany: "NVIDIA", prevTenure: 66, tier: "A", notable: ["Tensor methods", "AI for science", "Open-source AI advocate"], hIndex: 60, citations: 30000, papers: 130, twitter: "AnimaAnandkumar" },
 
   // ── Independent & Startups ──────────────────────────────
   { id: "andrej-karpathy", name: "Andrej Karpathy", role: "Independent Researcher & Educator", company: "Independent", joined: "2024-02", prevCompany: "OpenAI", prevTenure: 12, tier: "S", notable: ["Tesla Autopilot lead", "OpenAI founding", "nanoGPT", "autoresearch"], hIndex: 40, citations: 100000, papers: 25, twitter: "karpathy", website: "https://karpathy.ai" },
   { id: "ilya-sutskever", name: "Ilya Sutskever", role: "Co-founder & Chief Scientist", company: "SSI", joined: "2024-06", prevCompany: "OpenAI", prevTenure: 96, tier: "S", notable: ["GPT series architect", "AlexNet co-author", "SSI founder"], hIndex: 90, citations: 400000, papers: 98, twitter: "ilyasut" },
   { id: "david-silver", name: "David Silver", role: "Founder", company: "Ineffable Intelligence", joined: "2026-01", prevCompany: "Google DeepMind", prevTenure: 156, tier: "S", notable: ["AlphaGo lead", "AlphaZero", "RL pioneer"], hIndex: 75, citations: 100000, papers: 80 },
-  { id: "mira-murati", name: "Mira Murati", role: "Founder", company: "Independent", joined: "2024-09", prevCompany: "OpenAI", prevTenure: 48, tier: "A", notable: ["OpenAI CTO", "ChatGPT/GPT-4 launch leader"], hIndex: 3, citations: 500, papers: 2 },
+  { id: "mira-murati", name: "Mira Murati", role: "CEO & Founder", company: "Thinking Machines Lab", joined: "2025-02", prevCompany: "OpenAI", prevTenure: 48, tier: "A", notable: ["OpenAI CTO", "ChatGPT/GPT-4 launch leader", "Thinking Machines Lab founder"], hIndex: 3, citations: 500, papers: 2 },
   { id: "ashish-vaswani", name: "Ashish Vaswani", role: "Co-founder & CEO", company: "Essential AI", joined: "2022-06", prevCompany: "Google Brain", prevTenure: 84, tier: "A", notable: ["Transformer co-inventor", "Attention Is All You Need"], hIndex: 35, citations: 180000, papers: 25 },
   { id: "niki-parmar", name: "Niki Parmar", role: "Co-founder & CTO", company: "Essential AI", joined: "2022-06", prevCompany: "Google Brain", prevTenure: 72, tier: "A", notable: ["Transformer co-inventor", "Attention Is All You Need"], hIndex: 20, citations: 100000, papers: 15 },
   { id: "llion-jones", name: "Llion Jones", role: "Co-founder & Chief Scientist", company: "Sakana AI", joined: "2023-07", prevCompany: "Google Brain", prevTenure: 96, tier: "A", notable: ["Transformer co-inventor", "Sakana AI founder"], hIndex: 18, citations: 95000, papers: 12 },
@@ -184,7 +190,7 @@ export const RESEARCHERS: Researcher[] = [
   { id: "percy-liang", name: "Percy Liang", role: "Co-founder & Chief Scientist", company: "Together AI", joined: "2022-06", prevCompany: "Stanford", prevTenure: 120, tier: "A", notable: ["HELM benchmark", "Stanford CRFM", "Foundation models report"], hIndex: 65, citations: 40000, papers: 150 },
   { id: "yi-tay", name: "Yi Tay", role: "Co-founder & CTO", company: "Reka AI", joined: "2023-06", prevCompany: "Google Brain", prevTenure: 48, tier: "B", notable: ["UL2", "Flan-PaLM", "Reka Flash/Core models"], hIndex: 35, citations: 18000, papers: 60 },
   { id: "robin-rombach", name: "Robin Rombach", role: "Co-founder", company: "Black Forest Labs", joined: "2024-08", prevCompany: "Stability AI", prevTenure: 24, tier: "B", notable: ["Stable Diffusion lead author", "Latent diffusion models", "FLUX"], hIndex: 22, citations: 25000, papers: 15 },
-  { id: "rewon-child", name: "Rewon Child", role: "Co-founder", company: "Adept AI", joined: "2022-03", prevCompany: "OpenAI", prevTenure: 48, tier: "B", notable: ["Sparse Transformers", "Adept AI co-founder"], hIndex: 12, citations: 6000, papers: 8 },
+  { id: "rewon-child", name: "Rewon Child", role: "Research Scientist", company: "Microsoft", joined: "2024-03", prevCompany: "Inflection AI", prevTenure: 24, tier: "B", notable: ["Sparse Transformers", "GPT-2/3 contributor"], hIndex: 12, citations: 6000, papers: 8 },
   { id: "aravind-srinivas", name: "Aravind Srinivas", role: "CEO", company: "Perplexity AI", joined: "2022-08", prevCompany: "OpenAI", prevTenure: 12, tier: "A", notable: ["Perplexity AI founder", "AI search pioneer"], hIndex: 15, citations: 5000, papers: 12, twitter: "AravSrinivas" },
 
   // ── Academia ────────────────────────────────────────────
@@ -210,7 +216,7 @@ export const RESEARCHERS: Researcher[] = [
   { id: "hanna-hajishirzi", name: "Hanna Hajishirzi", role: "Research Director", company: "AI2", joined: "2018-01", prevCompany: "U Washington", prevTenure: 60, tier: "B", notable: ["OLMo", "Tulu models", "NLP research"], hIndex: 45, citations: 25000, papers: 80 },
 
   // ── Amazon ──────────────────────────────────────────────
-  { id: "alex-smola", name: "Alex Smola", role: "VP AI", company: "Amazon", joined: "2023-01", prevCompany: "Boson AI (founded)", prevTenure: 12, tier: "A", notable: ["SVM kernel methods", "MXNet co-creator", "AWS ML lead"], hIndex: 100, citations: 150000, papers: 200 },
+  { id: "alex-smola", name: "Alex Smola", role: "CEO & Co-founder", company: "Boson AI", joined: "2023-06", prevCompany: "Amazon AWS", prevTenure: 60, tier: "A", notable: ["SVM kernel methods", "MXNet co-creator", "Foundation model startup"], hIndex: 100, citations: 150000, papers: 200 },
 
   // ── Additional notable researchers ──────────────────────
   { id: "luke-zettlemoyer", name: "Luke Zettlemoyer", role: "Research Director", company: "Meta", joined: "2018-01", prevCompany: "U Washington", prevTenure: 96, tier: "A", notable: ["RoBERTa", "BART co-author", "Semantic parsing"], hIndex: 70, citations: 60000, papers: 120 },
@@ -226,16 +232,20 @@ export const RESEARCHERS: Researcher[] = [
 export const RECENT_MOVES: TransferMove[] = [
   { name: "Andrea Vallone", from: "OpenAI", to: "Anthropic", date: "Jan 2026", type: "hired" },
   { name: "David Silver", from: "Google DeepMind", to: "Ineffable Intelligence", date: "Jan 2026", type: "founded" },
+  { name: "Bob McGrew", from: "OpenAI", to: "Thinking Machines Lab", date: "Apr 2025", type: "hired" },
+  { name: "Mira Murati", from: "OpenAI", to: "Thinking Machines Lab", date: "Feb 2025", type: "founded" },
+  { name: "Barret Zoph", from: "OpenAI", to: "Thinking Machines Lab", date: "Feb 2025", type: "hired" },
+  { name: "Lilian Weng", from: "OpenAI", to: "Thinking Machines Lab", date: "Feb 2025", type: "hired" },
+  { name: "John Schulman", from: "Anthropic", to: "Thinking Machines Lab", date: "Feb 2025", type: "hired" },
   { name: "Nicholas Carlini", from: "Google DeepMind", to: "Anthropic", date: "2025", type: "hired" },
-  { name: "Mustafa Suleyman", from: "Inflection AI", to: "Microsoft", date: "Mar 2024", type: "hired" },
+  { name: "Durk Kingma", from: "Google DeepMind", to: "Anthropic", date: "Oct 2024", type: "hired" },
+  { name: "Julian Schrittwieser", from: "Google DeepMind", to: "Anthropic", date: "Oct 2024", type: "hired" },
   { name: "John Schulman", from: "OpenAI", to: "Anthropic", date: "Aug 2024", type: "hired" },
   { name: "Jan Leike", from: "OpenAI", to: "Anthropic", date: "May 2024", type: "hired" },
-  { name: "Durk Kingma", from: "OpenAI", to: "Anthropic", date: "Oct 2024", type: "hired" },
-  { name: "Julian Schrittwieser", from: "Google DeepMind", to: "Anthropic", date: "Oct 2024", type: "hired" },
-  { name: "Mira Murati", from: "OpenAI", to: "Independent", date: "Sep 2024", type: "departed" },
+  { name: "Mustafa Suleyman", from: "Inflection AI", to: "Microsoft", date: "Mar 2024", type: "hired" },
   { name: "Robin Rombach", from: "Stability AI", to: "Black Forest Labs", date: "Aug 2024", type: "founded" },
-  { name: "Noam Shazeer", from: "Character.AI", to: "Google DeepMind", date: "Aug 2023", type: "hired" },
   { name: "Ilya Sutskever", from: "OpenAI", to: "SSI", date: "Jun 2024", type: "founded" },
+  { name: "Noam Shazeer", from: "Character.AI", to: "Google DeepMind", date: "Aug 2023", type: "hired" },
   { name: "Ian Goodfellow", from: "Apple", to: "Google DeepMind", date: "Mar 2023", type: "hired" },
 ];
 

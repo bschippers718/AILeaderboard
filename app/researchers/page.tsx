@@ -136,6 +136,9 @@ export default function RosterPage() {
 
   const filtered = useMemo(() => {
     if (companyFilter === "all") return RESEARCHERS;
+    if (companyFilter === "__recent__") {
+      return RESEARCHERS.filter((r) => computeTenureMonths(r.joined) < 18);
+    }
     return RESEARCHERS.filter((r) => r.company === companyFilter);
   }, [companyFilter]);
 
@@ -322,7 +325,11 @@ export default function RosterPage() {
                   <>
                     {" "}
                     · filtered to{" "}
-                    <span className="text-ghost">{companyFilter}</span>
+                    <span className="text-ghost">
+                      {companyFilter === "__recent__"
+                        ? "recent moves"
+                        : companyFilter}
+                    </span>
                   </>
                 )}
               </p>
@@ -340,6 +347,17 @@ export default function RosterPage() {
                   }`}
                 >
                   ALL
+                </button>
+                <button
+                  onClick={() => setCompanyFilter("__recent__")}
+                  className={`px-3 py-1.5 text-[10px] tracking-wider transition-all cursor-pointer ${
+                    companyFilter === "__recent__"
+                      ? "bg-blaze text-void font-bold"
+                      : "bg-raised text-blaze/70 hover:text-blaze border border-blaze/20"
+                  }`}
+                  title="Show researchers who moved in the last 18 months"
+                >
+                  RECENT MOVES
                 </button>
                 {COMPANY_FILTER_LIST.map((company) => (
                   <button
@@ -361,16 +379,17 @@ export default function RosterPage() {
               <div className="flex gap-1.5">
                 {(
                   [
-                    "influence",
-                    "hIndex",
-                    "citations",
-                    "tenure",
-                    "heat",
-                  ] as SortKey[]
-                ).map((key) => (
+                    ["influence", "Composite score: tier + h-index + citations"],
+                    ["hIndex", "Papers with at least that many citations"],
+                    ["citations", "Total times their work has been cited"],
+                    ["tenure", "How long at their current company"],
+                    ["heat", "Likelihood of switching companies soon"],
+                  ] as [SortKey, string][]
+                ).map(([key, tip]) => (
                   <button
                     key={key}
                     onClick={() => setSortKey(key)}
+                    title={tip}
                     className={`px-3 py-1.5 text-[10px] tracking-wider transition-all cursor-pointer ${
                       sortKey === key
                         ? "bg-bright text-void font-bold"
@@ -389,15 +408,15 @@ export default function RosterPage() {
             <div className="min-w-[900px]">
               {/* Header */}
               <div className="grid grid-cols-[44px_1fr_130px_130px_60px_70px_36px_52px_76px] gap-3 px-5 py-3 bg-raised text-ghost text-[10px] tracking-[0.15em] uppercase border-b border-line">
-                <span>#</span>
-                <span>Researcher</span>
-                <span>Company</span>
-                <span>Previous</span>
-                <span>h-idx</span>
-                <span>Citations</span>
-                <span>Tier</span>
-                <span>Heat</span>
-                <span>Links</span>
+                <span title="Rank by influence score" className="cursor-help border-b border-dotted border-ghost/30">#</span>
+                <span title="Name and current role" className="cursor-help border-b border-dotted border-ghost/30">Researcher</span>
+                <span title="Current employer and how long they've been there" className="cursor-help border-b border-dotted border-ghost/30">Company</span>
+                <span title="Where they worked before" className="cursor-help border-b border-dotted border-ghost/30">Previous</span>
+                <span title="h-index: number of papers with at least that many citations" className="cursor-help border-b border-dotted border-ghost/30">h-idx</span>
+                <span title="Total number of times their papers have been cited" className="cursor-help border-b border-dotted border-ghost/30">Citations</span>
+                <span title="S = legend, A = senior leader, B = principal, C = rising star" className="cursor-help border-b border-dotted border-ghost/30">Tier</span>
+                <span title="How likely they are to switch companies (5 = very likely)" className="cursor-help border-b border-dotted border-ghost/30">Heat</span>
+                <span title="Links to X, LinkedIn, and Google Scholar" className="cursor-help border-b border-dotted border-ghost/30">Links</span>
               </div>
 
               {/* Rows */}
@@ -445,6 +464,11 @@ export default function RosterPage() {
                       <CompanyBadge company={r.company} />
                       <div className="text-ghost text-[10px] mt-1">
                         {formatTenure(tenure)}
+                        {companyFilter === "__recent__" && r.prevCompany && (
+                          <span className="text-blaze/70 ml-1.5">
+                            ← {r.prevCompany}
+                          </span>
+                        )}
                       </div>
                     </div>
 
@@ -701,6 +725,9 @@ export default function RosterPage() {
           </div>
           <div className="text-ghost/50 text-[10px] tabular tracking-wide">
             data from public sources · arXiv · Google Scholar · press coverage
+            <span className="block mt-1 text-ghost/30">
+              last updated: Mar 2026
+            </span>
           </div>
         </div>
       </footer>
