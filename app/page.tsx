@@ -47,7 +47,7 @@ function CompanyBadge({ company }: { company: string }) {
   const color = COMPANY_COLORS[company] || "#888";
   return (
     <span
-      className="company-badge"
+      className="company-badge inline-block max-w-full truncate"
       style={{
         borderColor: `${color}33`,
         color,
@@ -507,9 +507,9 @@ export default function RosterPage() {
 
           {/* Desktop table */}
           <div className="hidden md:block border border-line overflow-x-auto">
-            <div className="min-w-[900px]">
+            <div className="min-w-[1020px]">
               {/* Header */}
-              <div className="grid grid-cols-[44px_1fr_130px_130px_60px_70px_36px_52px_76px] gap-3 px-5 py-3 bg-raised text-ghost text-[10px] tracking-[0.15em] uppercase border-b border-line">
+              <div className="grid grid-cols-[44px_1fr_190px_140px_56px_68px_36px_52px_72px] gap-2 px-5 py-3 bg-raised text-ghost text-[10px] tracking-[0.15em] uppercase border-b border-line">
                 <span title="Rank by influence score" className="cursor-help border-b border-dotted border-ghost/30">#</span>
                 <span title="Name and current role" className="cursor-help border-b border-dotted border-ghost/30">Researcher</span>
                 <span title="Current employer and how long they've been there" className="cursor-help border-b border-dotted border-ghost/30">Company</span>
@@ -532,7 +532,7 @@ export default function RosterPage() {
                     whileInView={{ opacity: 1, x: 0 }}
                     viewport={{ once: true }}
                     transition={{ delay: Math.min(i * 0.02, 0.5), duration: 0.3 }}
-                    className={`grid grid-cols-[44px_1fr_130px_130px_60px_70px_36px_52px_76px] gap-3 px-5 py-3.5 items-center border-b border-line/30 hover:bg-hover transition-colors group ${
+                    className={`grid grid-cols-[44px_1fr_190px_140px_56px_68px_36px_52px_72px] gap-2 px-5 py-3.5 items-center border-b border-line/30 hover:bg-hover transition-colors group ${
                       i === 0 ? "box-glow-ember bg-raised/40" : ""
                     }`}
                   >
@@ -562,16 +562,18 @@ export default function RosterPage() {
                     </div>
 
                     {/* Company + Tenure */}
-                    <div className="min-w-0">
-                      <CompanyBadge company={r.company} />
-                      <div className="text-ghost text-[10px] mt-1">
-                        {formatTenure(tenure)}
-                        {companyFilter === "__recent__" && r.prevCompany && (
-                          <span className="text-blaze/70 ml-1.5">
-                            ← {r.prevCompany}
-                          </span>
-                        )}
+                    <div className="min-w-0 overflow-hidden">
+                      <div className="truncate">
+                        <CompanyBadge company={r.company} />
                       </div>
+                      <div className="text-ghost text-[10px] mt-1 truncate">
+                        {formatTenure(tenure)}
+                      </div>
+                      {companyFilter === "__recent__" && r.prevCompany && (
+                        <div className="text-blaze/70 text-[10px] truncate">
+                          ← {r.prevCompany}
+                        </div>
+                      )}
                     </div>
 
                     {/* Previous */}
