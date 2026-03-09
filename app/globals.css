@@ -1,0 +1,371 @@
+@import "tailwindcss";
+
+@theme {
+  --color-void: #07070a;
+  --color-base: #0f0f14;
+  --color-raised: #16161f;
+  --color-hover: #1c1c28;
+
+  --color-bright: #e8e8f0;
+  --color-dim: #7a7a96;
+  --color-ghost: #4a4a64;
+
+  --color-neon: #00ffb2;
+  --color-ember: #ffb547;
+  --color-blaze: #ff4466;
+  --color-gold: #ffd700;
+  --color-frost: #4488ff;
+  --color-violet: #a855f7;
+
+  --color-line: #1e1e32;
+  --color-edge: #2e2e4a;
+
+  --font-display: var(--font-syne), "Syne", system-ui, sans-serif;
+  --font-mono: var(--font-ibm-plex-mono), "IBM Plex Mono", ui-monospace,
+    monospace;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-mono);
+  background: var(--color-void);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+::selection {
+  background: rgba(0, 255, 178, 0.2);
+  color: #00ffb2;
+}
+
+::-webkit-scrollbar {
+  width: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-edge);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-neon);
+}
+
+.grid-bg {
+  position: relative;
+}
+.grid-bg::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image: linear-gradient(
+      rgba(0, 255, 178, 0.025) 1px,
+      transparent 1px
+    ),
+    linear-gradient(90deg, rgba(0, 255, 178, 0.025) 1px, transparent 1px);
+  background-size: 64px 64px;
+  pointer-events: none;
+  z-index: 0;
+  mask-image: radial-gradient(
+    ellipse 80% 70% at 50% 30%,
+    black 0%,
+    transparent 100%
+  );
+}
+
+.scanlines::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.012) 2px,
+    rgba(0, 0, 0, 0.012) 4px
+  );
+  pointer-events: none;
+  z-index: 100;
+}
+
+.glow-neon {
+  text-shadow: 0 0 7px rgba(0, 255, 178, 0.6), 0 0 20px rgba(0, 255, 178, 0.3),
+    0 0 40px rgba(0, 255, 178, 0.1);
+}
+
+.glow-gold {
+  text-shadow: 0 0 7px rgba(255, 215, 0, 0.6), 0 0 20px rgba(255, 215, 0, 0.3);
+}
+
+.glow-ember {
+  text-shadow: 0 0 7px rgba(255, 181, 71, 0.5),
+    0 0 20px rgba(255, 181, 71, 0.2);
+}
+
+.box-glow {
+  box-shadow: 0 0 15px rgba(0, 255, 178, 0.08),
+    0 0 40px rgba(0, 255, 178, 0.04),
+    inset 0 1px 0 rgba(0, 255, 178, 0.06);
+}
+
+@keyframes pulse-soft {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes blink-cursor {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes drift-up {
+  from {
+    transform: translateY(100vh);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.06;
+  }
+  90% {
+    opacity: 0.06;
+  }
+  to {
+    transform: translateY(-100vh);
+    opacity: 0;
+  }
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+.upload-zone {
+  border: 2px dashed var(--color-edge);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.upload-zone:hover,
+.upload-zone.drag-active {
+  border-color: var(--color-neon);
+  background: rgba(0, 255, 178, 0.02);
+  box-shadow: 0 0 40px rgba(0, 255, 178, 0.06),
+    inset 0 0 40px rgba(0, 255, 178, 0.02);
+}
+
+.digit-cell {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.4ch;
+  padding: 0.3em 0.1em;
+  background: var(--color-base);
+  border: 1px solid var(--color-line);
+  border-radius: 4px;
+  position: relative;
+}
+.digit-cell::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  background: var(--color-line);
+  opacity: 0.3;
+}
+.digit-cell.dot {
+  background: transparent;
+  border: none;
+  width: 0.6ch;
+}
+.digit-cell.dot::after {
+  display: none;
+}
+
+.rank-badge {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 6px;
+  position: relative;
+}
+.rank-badge.first {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 215, 0, 0.05));
+  border: 1px solid rgba(255, 215, 0, 0.4);
+  color: var(--color-gold);
+  box-shadow: 0 0 12px rgba(255, 215, 0, 0.15);
+}
+.rank-badge.second {
+  background: linear-gradient(135deg, rgba(192, 192, 210, 0.12), rgba(192, 192, 210, 0.04));
+  border: 1px solid rgba(192, 192, 210, 0.3);
+  color: #c0c0d2;
+}
+.rank-badge.third {
+  background: linear-gradient(135deg, rgba(205, 127, 50, 0.12), rgba(205, 127, 50, 0.04));
+  border: 1px solid rgba(205, 127, 50, 0.3);
+  color: #cd7f32;
+}
+.rank-badge.rest {
+  background: var(--color-raised);
+  border: 1px solid var(--color-line);
+  color: var(--color-ghost);
+}
+
+.gpu-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  border: 1px solid;
+}
+.gpu-chip.h100 {
+  border-color: rgba(0, 255, 178, 0.25);
+  color: var(--color-neon);
+  background: rgba(0, 255, 178, 0.06);
+}
+.gpu-chip.a100 {
+  border-color: rgba(68, 136, 255, 0.25);
+  color: var(--color-frost);
+  background: rgba(68, 136, 255, 0.06);
+}
+.gpu-chip.rtx4090 {
+  border-color: rgba(255, 68, 102, 0.25);
+  color: var(--color-blaze);
+  background: rgba(255, 68, 102, 0.06);
+}
+.gpu-chip.l40s {
+  border-color: rgba(168, 85, 247, 0.25);
+  color: var(--color-violet);
+  background: rgba(168, 85, 247, 0.06);
+}
+
+/* ── Company Badges ──────────────────────────────── */
+
+.company-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  border: 1px solid;
+  white-space: nowrap;
+}
+
+/* ── Tier Badges ─────────────────────────────────── */
+
+.tier-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 22px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  border-radius: 4px;
+  border: 1px solid;
+}
+.tier-badge.s {
+  border-color: rgba(255, 215, 0, 0.4);
+  color: var(--color-gold);
+  background: rgba(255, 215, 0, 0.08);
+}
+.tier-badge.a {
+  border-color: rgba(0, 255, 178, 0.3);
+  color: var(--color-neon);
+  background: rgba(0, 255, 178, 0.06);
+}
+.tier-badge.b {
+  border-color: rgba(68, 136, 255, 0.3);
+  color: var(--color-frost);
+  background: rgba(68, 136, 255, 0.06);
+}
+.tier-badge.c {
+  border-color: rgba(122, 122, 150, 0.3);
+  color: var(--color-dim);
+  background: rgba(122, 122, 150, 0.06);
+}
+
+/* ── Heat Flames ─────────────────────────────────── */
+
+.heat-indicator {
+  display: inline-flex;
+  gap: 2px;
+  align-items: center;
+}
+.heat-dot {
+  width: 6px;
+  height: 12px;
+  border-radius: 2px;
+  background: var(--color-line);
+  transition: background 0.3s;
+}
+.heat-dot.active-1 { background: #22C55E; }
+.heat-dot.active-2 { background: #86EFAC; }
+.heat-dot.active-3 { background: var(--color-ember); }
+.heat-dot.active-4 { background: #FF8C42; }
+.heat-dot.active-5 { background: var(--color-blaze); }
+
+/* ── Transfer Ticker ─────────────────────────────── */
+
+@keyframes ticker-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.ticker-track {
+  display: flex;
+  gap: 3rem;
+  animation: ticker-scroll 45s linear infinite;
+  white-space: nowrap;
+}
+.ticker-track:hover {
+  animation-play-state: paused;
+}
+
+/* ── Glow variants for ember accent ──────────────── */
+
+.box-glow-ember {
+  box-shadow: 0 0 15px rgba(255, 181, 71, 0.08),
+    0 0 40px rgba(255, 181, 71, 0.04),
+    inset 0 1px 0 rgba(255, 181, 71, 0.06);
+}
+
+/* ── Social icon links ───────────────────────────── */
+
+.social-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  color: var(--color-ghost);
+  transition: color 0.2s, background 0.2s;
+}
+.social-icon:hover {
+  color: var(--color-bright);
+  background: var(--color-raised);
+}
